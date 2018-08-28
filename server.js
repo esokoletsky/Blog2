@@ -88,3 +88,46 @@ app.delete("/blogs", (req, res) => {
 		.catch(err => res.status(500).json({ message: "Internal server error" }));
 });
 
+app.use("*", function(req, res) => {
+	res.status(404).json({ message: "Not Found"});
+});
+
+let server;
+
+function runServer(databaseUrl, port = PORT) {
+	return new Promise((resolve, reject) => {
+		mongoose.connect(
+			databaseUrl,
+			err => {
+				if (err) {
+					return reject(err);
+				}
+				server = app
+				.listen(port, () => {
+					console.log(`Your app is listening on port ${port}`);
+					resolve();
+				});
+			}
+			);
+	});
+}
+
+function closeServer() {
+	return mongoose.disconnect().then(() => {
+		return new Promise((resolve, reject) => {
+			console.log("closing server");
+			server.close(err => {
+				if (err) {
+					return reject(err);
+				}
+				resolve();
+			});
+		});
+	});
+}
+
+if (require.main === module) {
+	runServer(DATABASE_URL).catch(err => console.error(err));
+}
+
+module.exports = { app, runServer, closeServer };
